@@ -1,0 +1,283 @@
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using OpenQA.Selenium.Support.UI;
+using System.IO;
+using System.Threading;
+using static System.Net.WebRequestMethods;
+using System.IO;
+
+namespace ToolRegfbPage_1._0._0
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent(); 
+            
+        }
+        public string duongDanCha = @"Pages";
+
+        private void btnLayVaGhi_Click(object sender, EventArgs e)
+        {
+            string uidTaopage = txtUidTaopage.Text;
+            int select = 0;
+
+            // Tạo thư mục với tên là uidTaopage nếu nó chưa tồn tại
+            string folderName = uidTaopage;
+            TaoThuMuc(folderName);
+
+            List<string> fileNames = new List<string>();
+
+            if (select == 0)
+            {
+                // Lấy dữ liệu từ hàm LayDanhSachPageIdDemo
+                List<string> danhSachPageIds = LayDanhSachPageIdDemo(uidTaopage);
+
+                // Vào thư mục mới tạo và tạo file có tên Uid_taopage+Page
+                string tenFile = uidTaopage + "Page";
+                TaoVaGhiFileTrongThuMuc(folderName, tenFile, danhSachPageIds);
+
+                // Lấy danh sách tệp tin trong thư mục để hiển thị trên ListView
+                fileNames = DocFileTrongThuMuc(folderName);
+            }
+            else if (select == 1)
+            {
+                // Lấy dữ liệu từ file đã có
+                fileNames = DocFileTrongThuMuc(folderName);
+
+                if (fileNames.Count == 0)
+                {
+                    listView1.Items.Clear();
+                    MessageBox.Show($"Không có dữ liệu trong tệp tin cho {uidTaopage}.");
+                    return;
+                }
+            }
+            else
+            {
+                // Xử lý trường hợp lựa chọn không hợp lệ
+                MessageBox.Show("Lựa chọn không hợp lệ.");
+                return;
+            }
+
+            if (fileNames.Count > 0)
+            {
+                MessageBox.Show("Có dữ liệu trong tệp tin.");
+
+                // Xóa các mục hiện có trong ListView
+                listView1.Items.Clear();
+
+                // Thêm các mục từ danh sách vào ListView
+                foreach (string fileName in fileNames)
+                {
+                    ListViewItem item = new ListViewItem(fileName);
+                    listView1.Items.Add(item);
+                }
+            }
+            else
+            {
+                listView1.Items.Clear();
+                MessageBox.Show($"Không có tệp tin trùng với {uidTaopage} trong thư mục {folderName}.");
+            }
+        }
+
+
+        private List<string> LayDanhSachPageIdDemo(string Uid_taopage, int mode = 1)
+        {
+            string hrefContains = "https://www.facebook.com/profile.php?id=";
+            List<string> ListHref = new List<string>();
+            ListHref.Add("https://www.facebook.com/profile.php?id=123");
+            ListHref.Add("https://www.facebook.com/profile.php?id=456");
+            ListHref.Add("https://www.facebook.com/profile.php?id=789");
+            ListHref.Add("https://www.facebook.com/profile.php?fgghh");
+            ListHref.Add("https://www.facebook.com/profile.php?fgghh123");
+
+            List<string> listUIDPage = new List<string>();
+
+            foreach (string link in ListHref)
+            {
+                if (link != null && link.Contains(hrefContains))
+                {
+                    string id = link.Split('=')[1];
+                    listUIDPage.Add(id);
+                }
+            }
+
+            return listUIDPage;
+        }
+
+        private void TaoThuMuc(string tenThuMuc)
+        {
+            try
+            {
+                // Thay thế bằng đường dẫn thực
+
+                string duongDanMoi = Path.Combine(duongDanCha, tenThuMuc);
+
+                if (!Directory.Exists(duongDanMoi))
+                {
+                    Directory.CreateDirectory(duongDanMoi);
+                    
+                }
+                
+            }
+            catch (Exception ex)
+            {
+               MessageBox.Show("Lỗi khi tạo thư mục: " + ex.Message);
+            }
+        }
+
+        private void TaoVaGhiFileTrongThuMuc(string tenThuMuc, string tenFile, List<string> danhSachDuLieu)
+        {
+            try
+            {
+                string duongDanThuMuc = Path.Combine(duongDanCha, tenThuMuc);
+                string duongDanFile = Path.Combine(duongDanThuMuc, tenFile + ".txt");
+                if (!Directory.Exists(duongDanThuMuc))
+                {
+                    
+                    MessageBox.Show("Thư mục không tồn tại: " + duongDanThuMuc);
+                    return;
+                }
+
+                if (System.IO.File.Exists(duongDanFile))
+                {
+                    MessageBox.Show("File đã tồn tại: " + duongDanFile);
+                    return;
+                }
+
+                using (StreamWriter writer = new StreamWriter(duongDanFile))
+                {
+                    foreach (string duLieu in danhSachDuLieu)
+                    {
+                        writer.WriteLine(duLieu);
+                    }
+                }
+
+                MessageBox.Show("Đã ghi dữ liệu vào file: " + duongDanFile);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tạo và ghi file: " + ex.Message);
+            }
+        }
+        private List<string> DocFileTrongThuMuc(string tenThuMuc)
+        {
+            List<string> lines = new List<string>();
+
+            try
+            {
+                string duongDanThuMuc = Path.Combine(duongDanCha, tenThuMuc);
+                string duongDanFile = Path.Combine(duongDanThuMuc, tenThuMuc + "Page.txt");
+
+                if (!System.IO. File.Exists(duongDanFile))
+                {
+                    Console.WriteLine($"Tệp tin {duongDanFile} không tồn tại.");
+                    return lines;
+                }
+
+                using (StreamReader reader = new StreamReader(duongDanFile))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        string line = reader.ReadLine();
+                        lines.Add(line);
+                    }
+                }
+
+                Console.WriteLine($"Đã đọc dữ liệu từ tệp tin {duongDanFile}.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Lỗi khi đọc file: " + ex.Message);
+            }
+
+            return lines;
+        }
+
+
+
+        public List<string> LayDanhSachPageId(ref IWebDriver driver,string Uid_taopage, int mode = 1)
+        {
+            List<string> foundIds = new List<string>();
+            if (mode == 0)
+            {
+                //fake ip
+                //dang nhap bang cookie
+                //lay dc danh sach page
+                //tạo folder nếu có rồi thì không tạo mới 
+                //xong vào folder đó tạo file txt có tên file là UIDPage nếu có rồi thì mở file và kiểm tra xem UID page đó có trùng không không trùng thì ghi vào cuối 
+
+                string hrefContains = "https://www.facebook.com/profile.php?id=";
+                string url = "https://www.facebook.com/pages/?category=your_pages";
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
+                Thread.Sleep(3000);
+               
+
+
+                driver.Navigate().GoToUrl(url);
+
+                IReadOnlyList<IWebElement> allLinks = driver.FindElements(By.TagName("a"));
+
+                foreach (IWebElement link in allLinks)
+                {
+                    string hrefValue = link.GetAttribute("href");
+
+                    if (hrefValue != null && hrefValue.Contains(hrefContains))
+                    {
+                        string id = hrefValue.Split('=')[1];
+                        foundIds.Add(id);
+                    }
+                }
+
+
+                return foundIds;
+            }
+            else if (mode == 1)
+            {
+                //load danh sách phụ thuộc vào uid từ local 
+                //vào thư mục page của UId đó và load nó lên các page
+               
+                return foundIds;
+            }
+
+            
+            return foundIds;
+
+
+
+        }
+        private void button1_Click(object sender, EventArgs e)
+        {
+            IWebDriver driver = null;
+
+            List<string> links = LayDanhSachPageIdDemo("123",1);
+            foreach (var item in links)
+            {
+            MessageBox.Show(item);
+
+            }
+
+
+
+
+
+
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+    }
+}
